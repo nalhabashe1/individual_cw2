@@ -20,34 +20,51 @@ app.get("/", (req, res, next) => {
 });
 
 const MongoClient = require('mongodb').MongoClient;
-let db;
-//connecting to your db monogodb access
-MongoClient.connect('mongodb+srv://nalhabashe:LOL1234567@cluster0.8j2zj.mongodb.net/test', (err, client) => {
-    db = client.db('activities')
-    })
+app.use((req, res, next) => {
+    //connecting to your db monogodb access
+    MongoClient.connect(
+      "mongodb+srv://nalhabashe:LOL1234567@cluster0.8j2zj.mongodb.net/test"
+    )
+      .then((client) => {
+        db = client.db('activities');
+        req.lessonsCollection = db.collection("lessons");
+        req.ordersCollection = db.collection("orders");
+        console.log("Connected to database successfully!");
+        next();
+      })
+      .catch((err) => {
+        console.log("Unable to connect to the database!");
+      });
+  });
 
-// get the collection name
-app.param('collectionName', (req, res, next, collectionName) => {
-    req.collection = db.collection(collectionName)
-    return next()
-})
-//GET
-// retrieves all the objects from an collection
-app.get('/collection/:collectionName', (req, res, next) => {
-    req.collection.find({}).toArray((e, results) => {
-        if (e) return next(e)
-        res.send(JSON.stringify(results))
-    })
-})
+app.get("/lessons", (req, res, next) => {
+    req.lessonsCollection.find().toArray().then((results) => {
+    res.status(200).send(JSON.stringify(results));
+    }).catch((err) => {
+        console.log(err);
+    });
+  });
+  
+  app.get("/orders", (req, res, next) => {
+    req.ordersCollection.find().toArray().then((orders) => {
+        res.send(orders);
+    }).catch((err) => {
+        console.log(err);
+    });
+  });
 
-//POST 
-//adds data into the collection 
-app.post('/collection/:collectionName', (req, res, next) => {
-    req.collection.insert(req.body, (e, results) => {  
-    if (e) return next(e)    
-    res.status(200).send(results.ops)   
-    })   
-})
+  app.post("/orders", (req, res, next) => {
+    const order = req.body;
+    console.log(order);
+    req.ordersCollection.insertOne(order).then( () => {
+        res.status(200).send({ status: true, message: "Order submitted successfully!"});
+      }).catch((err) => {
+        console.log(err);
+        res.status(404).send({ status: false, message: "Unable to submit the order!",
+        });
+      });
+  });
+
 
 app.use((req, res, next) =>{
     var imagePath = path.join(__dirname, "static", req.url);

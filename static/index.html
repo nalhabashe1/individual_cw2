@@ -116,15 +116,14 @@
           valid: false,
         },
         created: function(){
-                    fetch('http://localhost:3000/collection/lessons').then(
-                        function (response){
-                            response.json().then(
-                                function (json){
-                                    app.lessons = json;
-                                });
-                        }
-                    )
-                },
+                  fetch('https://individualcw2n.herokuapp.com/collection/lessons').then(
+                    function (response){
+                      response.json().then(
+                         function (json){
+                          app.lessons = json;
+                        });
+                      }
+                    )},
         methods: {
           addToCart(lesson) {
             let total= 0;
@@ -213,7 +212,8 @@
           }
           e.preventDefault();
          },
-        
+         
+         
         },
         computed: {
           cartItemCount() {
