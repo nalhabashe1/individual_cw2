@@ -1,0 +1,231 @@
+<html>
+  <head>
+    <title>After School Clubs</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <!-- <script src="lessons.js"></script> -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"/>
+    <link href="tailwind.css" rel="stylesheet">
+  </head>
+
+  <body>
+    <div id="app">
+      <header  class="p-4 flex w-full bg-blue-900 text-white font-semibold justify-between ">
+        <h1 class="font-semibold text-center p-2"v-text="sitename"></h1> 
+        <button v-on:click="showCheckout" class="bg-green-700 w-40 font-semibold h-10 p-2 rounded-lg" v-if="cartItemCount > 0 ">
+          {{cartItemCount}}
+          <span class="fas fa-cart-plus"></span>
+          View Cart
+        </button>
+        <button class="bg-gray-200 text-gray-600 w-40 font-semibold h-10 p-2 rounded-lg" v-on:click="showBackLesson" v-else> <span class="fas fa-cart-plus"></span> Cart</button>
+      </header>
+    
+      <main>    
+        <div v-if="showLesson">
+          <div class="container h-auto p-2 content-center ">
+            <!-- <label>Search: </label> -->
+          <input class="flex-grow px-4 rounded-l-full p-2 border-1 border-gray-300 rounded-r-full text-sm focus:outline" class="fas fa-search" type="search" v-model="search" placeholder="Search"/>
+          <input id="sortSubject" name="filter" type="radio" v-on:Click="sortSubject"> <label for="sortSubject">Subject</label>
+          <input id="sortLocation" name="filter" type="radio" v-on:Click="sortLocation"> <label for="sortLocation">Location</label>
+          <input id="sortAvailability" name="filter" type="radio" v-on:Click="sortAvailability"> <label for="sortAvailability">Availability</label>
+          <input id="sortLowestPrice" name="filter" type="radio" v-on:Click="sortLowestPrice"/> <label for="sortLowestPrice">Low Price</label>
+          <input id="sortHighestPrice" name="filter" type="radio" v-on:Click="sortHighestPrice"/> <label for="sortHighestPrice">High Price</label>
+          <input id="ascending" name="filter" type="radio" v-on:Click="ascending"> <label for="ascending">Ascending</label>
+          <input id="descending" name="filter" type="radio" v-on:Click="descending"> <label for="descending">Descending</label>
+        </div>
+        <h1 class="text-center font-semibold  text-4xl p-3"> Activites</h1>
+          <div class="grid grid-flow-row grid-cols-4 gap-6" >
+          <div v-for="lesson in getfilteredSearch" class="group relative">           
+            <div class=" shadow-xl border-1 border-gray-300 w-70 rounded-md m-2 font-semibold">
+              <img class="w-50 h-50 object-center bg-gray-200 hover:bg-gray-100 " v-bind:src="lesson.image" />
+            <h2 class="pl-2">Subject: {{lesson.subject}}</h2>
+            <p class="pl-2">Location: {{lesson.location}}</p>
+            <p class="pl-2">Price: {{lesson.price}}$</p>
+            <p class="pl-2">Spaces: {{lesson.spaces - cartCount(lesson)}}</p>
+            <p>
+              <span class="pl-2" v-for="n in lesson.rating">★</span>
+              <span class="pl-2" v-for="n in 5-lesson.rating">☆</span>
+            </p>
+            <button class="bg-green-700 text-white rounded-b-md font-semibold p-3 bg-opacity-75 w-full text-center" v-on:click="addToCart(lesson)" v-if="canAddToCart(lesson)">
+              Add to Cart
+            </button>
+            <button class="bg-gray-200 text-gray-600  rounded-b-md font-semibold p-3 bg-opacity-75 w-full text-center" disabled="disabled" v-else>Add to Cart</button>           
+          </div>
+          </div>
+        </div>
+        </div>
+   
+        <div v-else>
+          <h1 class="text-center font-semibold text-4xl p-3"> My Cart </h1>
+          <div class="grid grid-flow-row grid-cols-4 gap-6 p-5" >    
+          <div v-for="(lesson, index) in cart" class="group relative border-gray-300 shadow-xl border-1 border-gray-300 w-70 rounded-md m-2 font-semibold ">           
+            <figure>
+              <img class="bg-gray-200" v-bind:src="lesson.image" />
+            </figure>
+            <h2 class="pl-2">Subject: {{lesson.subject}}</h2>
+            <p class="pl-2">Location: {{lesson.location}}</p>
+            <p class="pl-2">Price: {{lesson.price}}$</p>
+            <button class="bg-green-700 text-white rounded-b-md font-semibold p-3 bg-opacity-75 w-full text-center" v-on:click="removeFromCart(index, lesson)">
+             Remove from Cart
+            </button>
+          </div>
+        </div>
+    <div class="container mx-auto px-5 bg-gray-200 border-gray-300 border-1 shadow-xl rounded-md p-4">
+       <p>
+      <h1 class="font-semibold text-3xl p-3">Checkout</h1>
+      <form
+      @submit.prevent="checkForm"
+      method="post"
+    ><p class="bg-red-300 w-auto rounded-md shadow-xl p-2" v-if="errors.length">
+      <b>Please enter the following required fields:</b>
+      <ul>
+        <li v-for="error in errors">{{ error }}</li>
+      </ul>
+    </p>
+      <strong>Name: </strong> <input class="rounded-md"placeholder=" Enter Name" v-model.trim="name"/>
+      <strong class="pl-10">Phone: </strong> <input class="rounded-md" placeholder=" Enter Phone Number" v-model.trim="phoneNumber" >
+      <button class="bg-gray-200 text-gray-600 rounded-md font-semibold p-1 px-2 text-center" v-if="!valid">
+       Checkout
+      </button>
+      <button class="bg-green-700 text-white rounded-md font-semibold p-1 px-2 text-center" v-else-if="valid" type="submit" v-on:click="submitForm">Checkout</button>     
+      </form>
+    </p>      
+      </div>
+       </div>
+      </main>
+      <footer class="text-center font-mono text-xl p-4 text-gray-300"> ©2021 Nour Alhabashi M00841472
+      </footer>
+    </div>
+
+    <script type="text/javascript">
+      var app = new Vue({
+        el: "#app",
+        data: {
+          sitename: "Hamilton - After School Clubs",
+          lessons: [],
+          total: 0,
+          cart: [],
+          search: '',
+          showLesson: true,
+          order: {
+            name: "",
+            phone: "",
+          },
+          errors: [],
+          name: null,
+          phoneNumber: null,
+          valid: false,
+        },
+        created: function(){
+                    fetch('http://localhost:3000/collection/lessons').then(
+                        function (response){
+                            response.json().then(
+                                function (json){
+                                    app.lessons = json;
+                                });
+                        }
+                    )
+                },
+        methods: {
+          addToCart(lesson) {
+            let total= 0;
+            this.cart.push(lesson);
+            total = total + lesson.price;
+            lesson.spaces--;
+          },
+          removeFromCart(index, lesson){
+            this.cart.splice(index, 1);
+            lesson.spaces++;
+          },
+          showCheckout() {
+            this.showLesson = this.showLesson ? false : true;
+          },
+          // changed showLesson to true, used in disabled button Cart to go back to lessons list 
+          showBackLesson() {
+            this.showLesson = true;
+          },
+          submitForm() {
+            alert("The Order has been submitted by name: " + this.name + " phone: " + this.phoneNumber);
+          },
+          canAddToCart(lesson) {
+            return lesson.spaces > this.cartCount(lesson);
+          },
+          // cartCount -- it will check the id if its valid it will increment runs each time 
+          cartCount(lesson){
+            let count =0;
+            for(let i =0; i < this.cart.length; i++){
+              if(this.cart[i] === lesson ){
+                
+              }
+            }
+            return count;
+          },
+          sortSubject(){
+            this.lessons.sort((a, b) => (a.subject > b.subject) ? 1 : -1);
+          },
+          sortLowestPrice(){
+            this.lessons.sort((a, b) => a.price > b.price ? 1 : -1);
+          },
+          sortHighestPrice(){
+            this.lessons.sort((a, b) => a.price < b.price ? 1 : -1);
+          },
+          ascending(){
+          this.lessons.sort((a, b) => (a.subject > b.subject) ? 1 : -1);
+          },
+          descending(){
+          this.lessons.sort((a, b) => (a.subject < b.subject) ? 1 : -1);
+          },
+          sortLocation(){
+          this.lessons.sort((a, b) => (a.location > b.location) ? 1 : -1);
+          },
+          sortAvailability(){
+          this.lessons.sort((a, b) => (a.spaces < b.spaces) ? 1 : -1);
+          },
+          sortHighRating(){
+          this.lessons.sort((a, b) => (a.rating < b.rating) ? 1 : -1);
+          },
+
+          checkForm: function (e) {
+          const regexString = /^[a-zA-z]+$/;
+          const regexInt = /^[1-9]+$/;
+          this.errors = [];
+
+          if (!this.name) {
+            this.errors.push('Name is required.');
+            this.valid = false;
+          }
+          else if(!this.name.match(regexString)){
+              this.errors.push('Name should be in letters.');
+              this.valid = false;
+          }
+          if(!this.phoneNumber) {
+             this.errors.push('Phone is required.');
+             this.valid = false;
+          }
+          else if(!this.phoneNumber.match(regexInt)){
+            this.errors.push('Phone should be in numbers.');
+            this.valid = false;
+            console.log("error"+ this.valid);
+          }
+          if(this.name.match(regexString) && this.phoneNumber.match(regexInt)) {
+          this.valid = true;
+          //console.log("no errors"+ this.valid);
+          return true;
+          }
+          e.preventDefault();
+         },
+        
+        },
+        computed: {
+          cartItemCount() {
+            return this.cart.length;
+          },
+          getfilteredSearch() {
+          const searchInput = this.search.toLowerCase();
+          const isMatched = str => str.toLowerCase().includes(searchInput);
+          return this.lessons.filter(lesson => isMatched(lesson.subject) || isMatched(lesson.location));
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
