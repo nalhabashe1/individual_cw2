@@ -1,2 +1,2 @@
-# individual_cw2
-coursework 2 - node.js
+# AfterSchoolClubsCW
+After school clubs coursework, using vue.js and tailwind css framework 
