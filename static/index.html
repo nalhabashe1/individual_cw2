@@ -86,7 +86,7 @@
       <button class="bg-gray-200 text-gray-600 rounded-md font-semibold p-1 px-2 text-center" v-if="!valid">
        Checkout
       </button>
-      <button class="bg-green-700 text-white rounded-md font-semibold p-1 px-2 text-center" v-else-if="valid" type="submit" v-on:click="submitForm">Checkout</button>     
+      <button class="bg-green-700 text-white rounded-md font-semibold p-1 px-2 text-center" v-else-if="valid" type="submit" v-on:click="newOrder">Checkout</button>     
       </form>
     </p>      
       </div>
@@ -107,16 +107,16 @@
           search: '',
           showLesson: true,
           order: {
-            name: "",
-            phone: "",
+            name: '',
+            phone: '',
           },
           errors: [],
-          name: null,
-          phoneNumber: null,
+          name: '',
+          phoneNumber: '',
           valid: false,
         },
         created: function(){
-                  fetch('https://individualcw2n.herokuapp.com/collection/lessons').then(
+                  fetch('https://individualcw2n.herokuapp.com/lessons').then(
                     function (response){
                       response.json().then(
                          function (json){
@@ -158,6 +158,7 @@
             }
             return count;
           },
+        
           sortSubject(){
             this.lessons.sort((a, b) => (a.subject > b.subject) ? 1 : -1);
           },
@@ -212,8 +213,59 @@
           }
           e.preventDefault();
          },
+         //submit order when checkout btn is clicked
+         newOrder: function() {
+            const order = {
+              name: this.name,
+              phone: this.phoneNumber,
+              lessons: this.cart.map((item) => {
+                return { lessonId: item.id, subject: item.subject, spaces: 1 };
+              })
+            };
+
+            fetch('https://individualcw2n.herokuapp.com/orders',{
+              method: 'POST',
+              status: 200,
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(order),
+              }).then(response => response.json())
+                alert("The order has been submitted successfully by name: " + this.name + " phone: " + this.phoneNumber);
+                // console.log('Success: ', responseJSON);
+                this.updateSpace();
+            // }).catch((err) => {
+            //   console.error(err)
+            // })
+              // )},
+            },
          
-         
+          updateSpace: () => {
+            const lessons = this.cart.map((item) => {
+              return { _id: item._id, spaces: item.spaces };
+            });
+
+            fetch('https://individualcw2n.herokuapp.com/lessons', {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ lessons }),
+            })
+              .then((response) => response.json())
+          },
+          //search fetch
+          searchData(e) {
+            fetch('https://individualcw2n.herokuapp.com/lessons'),{
+              method: 'POST',
+              body: JSON.stringify({payload: e.value}),
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }.then(res => res.json()).then(data => {
+              let payload = data.payload;
+            })
+          }
         },
         computed: {
           cartItemCount() {

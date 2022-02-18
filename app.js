@@ -2,13 +2,11 @@ const express = require('express')
 var path = require('path');
 const cors = require("cors");
 var fs = require('fs');
-var bodyParser = require('body-parser')
 
 const app = express();
 app.use(cors());
 app.set('port', 3000) 
-app.use(bodyParser.json());
-// app.use(express.json());
+app.use(express.json());
 
 app.use((req,res, next) =>{
     console.log("In comes a request from " + req.method + " to " + req.url + " at " + new Date())
@@ -20,6 +18,8 @@ app.get("/", (req, res, next) => {
 });
 
 const MongoClient = require('mongodb').MongoClient;
+const _id = require("mongodb")._id;
+
 app.use((req, res, next) => {
     //connecting to your db monogodb access
     MongoClient.connect(
@@ -36,7 +36,7 @@ app.use((req, res, next) => {
         console.log("Unable to connect to the database!");
       });
   });
-
+// lessons route get
 app.get("/lessons", (req, res, next) => {
     req.lessonsCollection.find().toArray().then((results) => {
     res.status(200).send(JSON.stringify(results));
@@ -44,15 +44,15 @@ app.get("/lessons", (req, res, next) => {
         console.log(err);
     });
   });
-  
+// orders route get
   app.get("/orders", (req, res, next) => {
     req.ordersCollection.find().toArray().then((orders) => {
-        res.send(orders);
+    res.status(200).send(JSON.stringify(orders));
     }).catch((err) => {
         console.log(err);
     });
   });
-
+// add new order
   app.post("/orders", (req, res, next) => {
     const order = req.body;
     console.log(order);
@@ -64,17 +64,50 @@ app.get("/lessons", (req, res, next) => {
         });
       });
   });
+  
+// updated lesson space
+  app.put("/lessons", (req, res, next) => {
+    const lessons = req.body.lessons;
+    let updatedCount = 0;
+    lessons.forEach((lesson) => { 
+      req.lessonsCollection.findOne({ _id: new _id(lesson._id),
+        }).then((existingLesson) => { existingLesson.spaces -= lesson.spaces;
+          return existingLesson;
+        }).then((existingLesson) => {
+        //   console.log('check updated spaces: ' + existingLesson.spaces);
+          return req.lessonsCollection.updateOne(
+            { _id: new _id(lesson._id)},
+            { $set: { spaces: existingLesson.spaces },
+            }
+          );
+        }).then((updated) => { 
+            updatedCount++;
+          if (updatedCount == lessons.length) {
+            res.send({message: `${ updatedCount } updated successfully!`, status: true });
+          }
+        }).catch((err) => {
+          console.error(err);
+        });
+    });
+  });
 
+//search bar
+app.post('/lessons', async (req, res) => {
+    let payload = req.body.payload.trim();
+    console.log(payload)
+    let search =  await lessonsCollection.find({ subject: {$regex: new RegExp('^'+ payload + '.*','i')}}).exec();
+    res.send({payload: search});
+})
 
 app.use((req, res, next) =>{
-    var imagePath = path.join(__dirname, "static", req.url);
-    fs.stat(imagePath, (err, fileInfo) => {
+    var filePath = path.join(__dirname, "static", req.url);
+    fs.stat(filePath, (err, fileInfo) => {
         if(err){
             next();
             return
         }
         if(fileInfo.isFile()){
-            res.sendFile(imagePath);
+            res.sendFile(filePath);
         } else{
             next();
         }
